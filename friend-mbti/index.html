@@ -1,0 +1,307 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<link rel="icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==">
+<title>测测我眼中的 TA · 拾陆</title>
+<meta name="description" content="凭印象答 28 题，看看你朋友是哪一型，顺便算算你们俩的匹配度。">
+<style>
+  /* 字体：包内 woff2，相对路径（容器禁止外部域名字体） */
+  @font-face{
+    font-family:'ShiluPixel';
+    font-style:normal;
+    font-weight:400;
+    font-display:swap;
+    src:url("./pixel-font.woff2") format("woff2");
+  }
+  :root{
+    --bg:#171320; --bg2:#221C30; --panel:#2A2338; --panel2:#332B44;
+    --line:#3E3552; --ink:#F4F0FF; --muted:#A79CBF;
+    --accent:#FF6A1A; --accent2:#FFB37A; --good:#4FC3A1; --warn:#F0A93B;
+    --radius:14px;
+    --font:"ShiluPixel","PingFang SC","Microsoft YaHei",system-ui,sans-serif;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg); color:var(--ink);
+    font-family:var(--font);
+    font-size:18px; line-height:1.7;
+    min-height:100vh; min-height:100dvh;
+    -webkit-font-smoothing:none;
+  }
+  .app{
+    max-width:520px;margin:0 auto;
+    padding:14px 18px 28px;
+    padding:calc(14px + env(safe-area-inset-top)) 18px calc(28px + env(safe-area-inset-bottom));
+  }
+
+  /* ---------- 顶部流动像素条 ---------- */
+  .pixelbar{
+    height:6px;width:100%;
+    background:repeating-linear-gradient(90deg,var(--accent) 0 6px,transparent 6px 12px);
+    background-size:24px 100%;
+    animation:barflow 1.6s linear infinite;
+  }
+  @keyframes barflow{from{background-position-x:0}to{background-position-x:24px}}
+
+  .kicker{font-size:12px;letter-spacing:.16em;color:var(--accent2);text-transform:uppercase;min-height:18px;}
+  h1{font-size:36px;line-height:1.3;margin:8px 0 0;}
+  h2{font-size:24px;line-height:1.4;margin:0 0 10px;}
+  .sub{color:var(--muted);font-size:18px;margin:10px 0 0;}
+  .small{font-size:12px;color:var(--muted);line-height:1.8;}
+
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:18px;margin-top:16px;}
+  .card.tight{padding:16px;}
+  .card.dark{background:var(--bg2);}
+
+  button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;font-family:var(--font);}
+  .btn{
+    display:flex;align-items:center;justify-content:center;
+    width:100%;min-height:58px;padding:14px 16px;
+    background:var(--accent);color:#1B1220;font-size:24px;
+    border-radius:12px;
+    box-shadow:0 4px 0 rgba(0,0,0,.35);
+    transition:transform .08s ease, box-shadow .08s ease, filter .15s ease;
+  }
+  .btn:active{transform:translateY(3px);box-shadow:0 1px 0 rgba(0,0,0,.35);}
+  .btn.ghost{background:var(--panel2);color:var(--ink);box-shadow:0 4px 0 rgba(0,0,0,.3);border:1px solid var(--line);}
+  .btn.small{min-height:46px;font-size:18px;padding:10px 14px;}
+  .btn.pulse{animation:pulse 2.4s ease-in-out infinite;}
+  @keyframes pulse{
+    0%,100%{box-shadow:0 4px 0 rgba(0,0,0,.35), 0 0 0 0 rgba(255,106,26,.5);}
+    50%{box-shadow:0 4px 0 rgba(0,0,0,.35), 0 0 0 12px rgba(255,106,26,0);}
+  }
+
+  /* ---------- 类型九宫格 ---------- */
+  .typegrid{display:grid;grid-template-columns:repeat(4,1fr);grid-gap:8px;margin-top:12px;}
+  .typebtn{
+    height:66px;border-radius:10px;
+    background:var(--panel2);border:1px solid var(--line);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    font-size:18px;line-height:1.2;
+    transition:border-color .15s ease, background .15s ease, transform .12s ease;
+  }
+  .typebtn .mini{font-size:12px;color:var(--muted);}
+  .typebtn:active{transform:scale(.94);}
+  .typebtn[aria-pressed="true"]{background:var(--accent);color:#1B1220;border-color:var(--accent);}
+  .typebtn[aria-pressed="true"] .mini{color:#5A2A00;}
+
+  /* ---------- 进度 ---------- */
+  .progress{margin-bottom:30px;}
+  .progress .track{height:10px;background:var(--panel2);border-radius:99px;overflow:hidden;border:1px solid var(--line);}
+  .progress .fill{height:100%;background:var(--accent);transition:width .3s cubic-bezier(.22,.8,.3,1);width:0;}
+  .progress .meta{display:flex;justify-content:space-between;margin-top:11px;font-size:12px;color:var(--muted);}
+
+  /* ---------- 题目 ---------- */
+  /* 答题屏整体撑满，题目块在剩余空间里垂直居中，避免头重脚轻 */
+  #screen-quiz{
+    display:flex;flex-direction:column;
+    min-height:calc(100vh - 48px);
+    min-height:calc(100dvh - 48px);
+  }
+  #screen-quiz .qwrap{
+    flex:1;display:flex;flex-direction:column;justify-content:center;
+    will-change:transform,opacity;
+  }
+  .qwrap.in-right{animation:slideRight .26s cubic-bezier(.22,.8,.3,1) both;}
+  .qwrap.in-left{animation:slideLeft .26s cubic-bezier(.22,.8,.3,1) both;}
+  @keyframes slideRight{from{opacity:0;transform:translateX(28px)}to{opacity:1;transform:translateX(0)}}
+  @keyframes slideLeft{from{opacity:0;transform:translateX(-28px)}to{opacity:1;transform:translateX(0)}}
+
+  .qtext{font-size:24px;line-height:1.6;margin:0 0 22px;}
+  .opts{display:flex;flex-direction:column;}
+  .opts > * + *{margin-top:12px;}
+  .opt{
+    display:flex;align-items:center;
+    width:100%;text-align:left;padding:20px 18px;min-height:86px;
+    background:var(--panel);border:1px solid var(--line);border-radius:12px;
+    font-size:18px;line-height:1.7;
+    box-shadow:0 3px 0 rgba(0,0,0,.28);
+    transition:transform .08s ease, border-color .15s ease, background .15s ease;
+    animation:optIn .3s cubic-bezier(.22,.8,.3,1) both;
+  }
+  .opt:nth-child(1){animation-delay:.04s;}
+  .opt:nth-child(2){animation-delay:.12s;}
+  @keyframes optIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+  .opt:active{transform:translateY(2px);}
+  .opt.picked{border-color:var(--accent);background:#3A2A22;transform:scale(.985);}
+  .opt .tag{
+    margin-right:12px;
+    flex:0 0 32px;height:32px;border-radius:8px;
+    display:flex;align-items:center;justify-content:center;
+    background:var(--panel2);border:1px solid var(--line);
+    font-size:18px;color:var(--accent2);font-family:ui-monospace,monospace;
+  }
+  .opt.picked .tag{background:var(--accent);color:#1B1220;border-color:var(--accent);}
+  .qfoot{display:flex;flex-direction:column;align-items:center;padding-top:20px;}
+  .qfoot > * + *{margin-top:2px;}
+  .qhint{color:var(--muted);font-size:12px;line-height:2;}
+  .backrow{display:flex;justify-content:center;}
+
+  /* 底部滚动播放的 16 型像素小人 */
+  .qparade{
+    overflow:hidden;margin-top:10px;
+    -webkit-mask-image:linear-gradient(90deg,transparent,#000 14%,#000 86%,transparent);
+    mask-image:linear-gradient(90deg,transparent,#000 14%,#000 86%,transparent);
+  }
+  .qparade .reel{
+    display:flex;width:max-content;
+    animation:marquee 30s linear infinite;
+  }
+  @keyframes marquee{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+  .qparade canvas{
+    width:46px;height:46px;flex:0 0 auto;margin-right:14px;
+    image-rendering:pixelated;opacity:.5;
+  }
+  .qparade canvas:nth-child(even){transform:translateY(7px);}
+  .linkbtn{color:var(--muted);font-size:18px;padding:8px;}
+
+  /* ---------- 结果 ---------- */
+  .reveal{animation:reveal .42s cubic-bezier(.22,.8,.3,1) both;}
+  @keyframes reveal{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+
+  .hero{display:flex;align-items:center;margin-top:6px;}
+  .hero > * + *{margin-left:16px;}
+  .hero canvas{width:96px;height:96px;image-rendering:pixelated;border-radius:12px;background:rgba(255,255,255,.04);}
+  .hero canvas.bob{animation:bob 3.2s ease-in-out infinite;}
+  @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+  .hero .typebig{font-size:48px;line-height:1.1;}
+  .hero .typename{color:var(--muted);font-size:18px;margin-top:2px;}
+  .chips{display:flex;flex-wrap:wrap;margin-top:10px;}
+  .chip{margin:0 6px 6px 0;}
+  .chip{
+    font-size:12px;line-height:1;padding:7px 10px;border-radius:99px;
+    background:var(--panel2);border:1px solid var(--line);color:var(--accent2);
+  }
+
+  /* 长文案的排版：引句 + 分段，靠留白分区，不设小标题 */
+  .lede{font-size:24px;line-height:1.65;color:#F4F0FF;margin:0 0 20px;}
+  .block{margin-top:18px;padding-left:11px;border-left:2px solid var(--line);}
+  .block-label{font-size:12px;letter-spacing:.12em;color:var(--accent2);margin-bottom:8px;}
+  .para{font-size:18px;line-height:1.95;color:#DED7F0;margin:0;letter-spacing:.01em;}
+
+  .dims{margin-top:16px;display:flex;flex-direction:column;}
+  .dim + .dim{margin-top:12px;}
+  .dim{display:flex;align-items:center;font-size:12px;}
+  .dim > * + *{margin-left:10px;}
+  .dim .lbl{flex:0 0 auto;color:var(--muted);width:78px;}
+  .dim .bar{flex:1;height:12px;background:var(--panel2);border-radius:99px;overflow:hidden;display:flex;border:1px solid var(--line);}
+  .dim .bar i{display:block;height:100%;width:0;transition:width .7s cubic-bezier(.22,.8,.3,1);}
+  .dim .bar i.l{background:var(--accent);}
+  .dim .bar i.r{background:var(--good);}
+  .dim .val{flex:0 0 40px;text-align:right;}
+  .closenote{color:var(--warn);font-size:12px;margin-top:10px;}
+
+  .matchhead{display:flex;align-items:center;justify-content:center;margin-top:4px;flex-wrap:wrap;}
+  .matchhead > * + *{margin-left:12px;}
+  .matchhead canvas{width:56px;height:56px;image-rendering:pixelated;border-radius:10px;background:rgba(255,255,255,.04);}
+  .matchhead .vs{color:var(--accent);font-size:18px;}
+  .matchhead .t{font-size:18px;}
+  .pairname{text-align:center;font-size:30px;line-height:1.4;margin-top:14px;}
+  .pairmeta{text-align:center;color:var(--muted);font-size:18px;margin-top:2px;}
+  .scorerow{display:flex;align-items:baseline;justify-content:center;margin-top:10px;}
+  .scorerow > * + *{margin-left:6px;}
+  .scorerow b{font-size:48px;color:var(--accent);line-height:1;}
+  .scorerow span{color:var(--muted);font-size:18px;}
+  .scorebar{height:10px;background:var(--panel2);border-radius:99px;overflow:hidden;margin-top:12px;border:1px solid var(--line);}
+  .scorebar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width .8s cubic-bezier(.22,.8,.3,1);}
+  .desc{margin-top:16px;font-size:18px;line-height:1.85;color:#E8E2F7;}
+  .section-tag{font-size:12px;letter-spacing:.12em;color:var(--accent2);margin-bottom:10px;}
+  .item{margin-top:14px;}
+  .item .t{font-size:18px;}
+  .item .d{color:var(--muted);font-size:18px;line-height:1.8;margin-top:4px;}
+  .advice p{margin:0;font-size:18px;line-height:1.85;color:#DED7F0;}
+  .advice .row{margin-top:12px;}
+  .advice .row b{color:var(--accent2);font-size:12px;margin-right:6px;}
+  .disclaimer{margin-top:22px;color:#7E739A;font-size:12px;line-height:1.9;}
+  .actions{margin-top:18px;display:flex;flex-direction:column;}
+  .actions > * + *{margin-top:10px;}
+
+  /* ---------- 分享引导 ---------- */
+  .sharecard{
+    margin-top:16px;padding:18px;border-radius:var(--radius);
+    border:1px dashed var(--accent);background:linear-gradient(180deg,#2E2436,#2A2338);
+    position:relative;overflow:hidden;
+  }
+  .sharecard::after{
+    content:"";position:absolute;top:0;right:0;bottom:0;left:0;pointer-events:none;
+    background:radial-gradient(120% 80% at 100% 0%, rgba(255,106,26,.16), transparent 60%);
+  }
+  .sharecard .st{font-size:12px;letter-spacing:.12em;color:var(--accent2);}
+  .sharecard .q{font-size:24px;line-height:1.5;margin:8px 0 0;}
+  .sharecard .h{color:var(--muted);font-size:18px;line-height:1.8;margin:8px 0 14px;}
+
+  /* ---------- 弹层 ---------- */
+  .modal{position:fixed;top:0;right:0;bottom:0;left:0;background:rgba(10,7,16,.94);display:none;z-index:50;padding:16px;overflow:auto;}
+  .modal.on{display:block;animation:fadeIn .2s ease both;}
+  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+  .modal .inner{max-width:420px;margin:0 auto;animation:sheetUp .3s cubic-bezier(.22,.8,.3,1) both;}
+  @keyframes sheetUp{from{opacity:0;transform:translateY(26px)}to{opacity:1;transform:translateY(0)}}
+  .modal img{width:100%;display:block;border-radius:12px;border:1px solid var(--line);}
+  .modal .hint{text-align:center;color:var(--muted);font-size:18px;margin:12px 0 14px;}
+
+  .hidden{display:none !important;}
+  .spacer{height:10px;}
+
+  @media (prefers-reduced-motion: reduce){
+    *{animation:none !important;transition:none !important;}
+  }
+</style>
+</head>
+<body>
+<div class="pixelbar"></div>
+<div class="app">
+  <section id="screen-cover">
+    <div class="spacer"></div>
+    <div class="kicker reveal">SHILU · RELATIONSHIP LAB</div>
+    <h1 class="reveal" style="animation-delay:.06s">测测我眼中的 TA</h1>
+    <p class="sub reveal" style="animation-delay:.12s">生活里总有那么几个朋友，你熟到不用客气，却也说不清 TA 到底是哪种人。<br>凭印象答 28 题，看看 TA 更像哪一型。</p>
+    <div class="card reveal" style="animation-delay:.18s">
+      <h2>先说说你自己</h2>
+      <p class="small" style="margin-top:0">知道就选，不知道就跳过——不影响测 TA。</p>
+      <div class="typegrid" id="selfGrid"></div>
+      <div style="margin-top:12px;">
+        <button class="btn ghost small" id="skipSelf">我不知道 / 先跳过</button>
+      </div>
+      <div id="selfHint" class="kicker" style="margin-top:12px;"></div>
+    </div>
+    <div class="actions reveal" style="animation-delay:.24s">
+      <button class="btn pulse" id="startBtn">开始测 TA</button>
+    </div>
+    <p class="disclaimer">本测试由拾陆自主研发，与第三方测评机构无关。结果只是你视角下的一份印象，不代表 TA 的真实类型。</p>
+  </section>
+
+  <section id="screen-quiz" class="hidden">
+    <div class="spacer"></div>
+    <div class="progress">
+      <div class="track"><div class="fill" id="fill"></div></div>
+      <div class="meta"><span id="qcount"></span><span id="qdim"></span></div>
+    </div>
+    <div class="qwrap" id="qwrap">
+      <div class="qtext" id="qtext"></div>
+      <div class="opts" id="opts"></div>
+    </div>
+    <div class="qparade" id="qparade" aria-hidden="true"></div>
+    <div class="qfoot">
+      <div class="qhint">凭第一感觉选，不用想太久</div>
+      <div class="backrow"><button class="linkbtn" id="prevBtn">← 上一题</button></div>
+    </div>
+  </section>
+
+  <section id="screen-result" class="hidden"></section>
+</div>
+
+<div class="modal" id="shareModal">
+  <div class="inner">
+    <img id="shareImg" alt="结果图">
+    <div class="hint" id="shareHint">长按图片即可保存</div>
+    <button class="btn ghost" id="closeModal">关闭</button>
+  </div>
+</div>
+
+<script src="data.js"></script>
+<script src="./app.js"></script>
+</body>
+</html>
